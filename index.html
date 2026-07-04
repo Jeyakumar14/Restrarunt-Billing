@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Billing System</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs@gh-pages/qrcode.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">🍽️ Restaurant Billing</h1>
+            <nav class="nav">
+                <button class="btn-nav" id="manageMenuBtn">Manage Menu</button>
+                <button class="btn-nav" id="dashboardBtn">Revenue Dashboard</button>
+                <button class="btn-nav" id="settingsBtn">Settings</button>
+                <button class="btn-nav cart-toggle" id="cartToggle">
+                    Cart (<span id="cartCount">0</span>)
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Menu Section -->
+            <section class="menu-section">
+                <div class="menu-section-header">
+                    <h2 class="section-title">Menu</h2>
+                    <button class="btn-secondary btn-manage-menu" id="manageMenuBtnAlt" type="button">Manage Menu</button>
+                </div>
+                <div class="menu-grid" id="menuGrid">
+                    <!-- Menu items will be dynamically inserted here -->
+                </div>
+            </section>
+
+            <!-- Revenue Dashboard (Hidden by default) -->
+            <section class="dashboard-section" id="dashboardSection" style="display: none;">
+                <div class="dashboard-header">
+                    <div class="dashboard-title-row">
+                        <h2 class="section-title">Revenue Dashboard</h2>
+                        <span class="live-badge" id="liveBadge" style="display: none;">
+                            <span class="live-dot"></span> Live
+                        </span>
+                    </div>
+                    <button class="btn-secondary" id="backToMenuBtn">Back to Menu</button>
+                </div>
+                
+                <div class="period-selector">
+                    <button class="period-btn active" data-period="live">Live</button>
+                    <button class="period-btn" data-period="10">10 Days</button>
+                    <button class="period-btn" data-period="20">20 Days</button>
+                    <button class="period-btn" data-period="30">30 Days</button>
+                    <button class="period-btn" data-period="365">1 Year</button>
+                    <button class="period-btn" data-period="custom">Custom Range</button>
+                </div>
+
+                <div class="report-section" id="customDateSection" style="display: none;">
+                    <h3>Sales Report — Date Range</h3>
+                    <div class="date-range-picker">
+                        <div class="form-group">
+                            <label for="reportStartDate">From</label>
+                            <input type="date" id="reportStartDate" class="form-input date-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="reportEndDate">To</label>
+                            <input type="date" id="reportEndDate" class="form-input date-input">
+                        </div>
+                        <button class="btn-secondary" id="presetWeekBtn" type="button">Last 7 Days</button>
+                        <button class="btn-secondary" id="applyDateRangeBtn" type="button">Apply Range</button>
+                    </div>
+                    <div class="report-download-actions">
+                        <button class="btn-primary" id="downloadReportPdfBtn" type="button">Download PDF Report</button>
+                        <button class="btn-secondary" id="downloadReportCsvBtn" type="button">Download CSV Report</button>
+                    </div>
+                    <p class="report-range-label" id="reportRangeLabel"></p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Total Revenue</h3>
+                        <p class="stat-value" id="totalRevenue">₹0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Cash Revenue</h3>
+                        <p class="stat-value stat-cash" id="cashRevenue">₹0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Online Revenue</h3>
+                        <p class="stat-value stat-online" id="onlineRevenue">₹0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Orders</h3>
+                        <p class="stat-value" id="totalOrders">0</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Average Order Value</h3>
+                        <p class="stat-value" id="avgOrderValue">₹0</p>
+                    </div>
+                </div>
+                <p class="last-updated" id="lastUpdated"></p>
+
+                <div class="order-history">
+                    <h3>Order History</h3>
+                    <div class="table-container">
+                        <table class="order-table" id="orderTable">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Date & Time</th>
+                                    <th>Items</th>
+                                    <th>Payment</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderTableBody">
+                                <!-- Orders will be dynamically inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Cart Sidebar -->
+    <aside class="cart-sidebar" id="cartSidebar">
+        <div class="cart-header">
+            <h2>Your Cart</h2>
+            <button class="close-btn" id="closeCartBtn">&times;</button>
+        </div>
+        <div class="cart-items" id="cartItems">
+            <!-- Cart items will be dynamically inserted here -->
+            <p class="empty-cart">Your cart is empty</p>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total">
+                <strong>Total: <span id="cartTotal">₹0</span></strong>
+            </div>
+            <button class="btn-primary btn-checkout" id="checkoutBtn" disabled>Proceed to Checkout</button>
+        </div>
+    </aside>
+
+    <!-- Cart Overlay -->
+    <div class="overlay" id="cartOverlay"></div>
+
+    <!-- Checkout Modal -->
+    <div class="modal" id="checkoutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Checkout</h2>
+                <button class="close-btn" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="order-summary" id="orderSummary">
+                    <!-- Order summary will be inserted here -->
+                </div>
+                <div class="payment-section">
+                    <h3>Select Payment Method</h3>
+                    <div class="payment-method-buttons">
+                        <button class="btn-payment btn-cash" id="payCashBtn">
+                            <span class="payment-icon">💵</span>
+                            <span>Pay by Cash</span>
+                        </button>
+                        <button class="btn-payment btn-online" id="payOnlineBtn">
+                            <span class="payment-icon">📱</span>
+                            <span>Pay Online (QR)</span>
+                        </button>
+                    </div>
+                    <div class="payment-actions payment-actions-cash">
+                        <button class="btn-secondary" id="generateInvoiceCashBtn">Generate Invoice (Cash)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Payment Modal -->
+    <div class="modal" id="qrPaymentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Pay Online via QR</h2>
+                <button class="close-btn" id="closeQrModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="qr-amount-label">Amount to Pay</p>
+                <p class="qr-amount" id="qrAmount">₹0</p>
+                <div class="qr-container qr-container-large">
+                    <div id="qrcode"></div>
+                    <p class="qr-info">Scan this QR code with any UPI app to pay</p>
+                </div>
+                <div class="payment-actions">
+                    <button class="btn-primary" id="confirmOnlinePaymentBtn">Payment Received</button>
+                    <button class="btn-secondary" id="generateInvoiceOnlineBtn">Generate Invoice (Online)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Menu Modal -->
+    <div class="modal" id="menuModal">
+        <div class="modal-content modal-content-wide">
+            <div class="modal-header">
+                <h2>Manage Menu</h2>
+                <button class="close-btn" id="closeMenuBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="manage-menu-section">
+                    <h3>Current Items</h3>
+                    <p class="form-help">Remove items that are not available today.</p>
+                    <div class="manage-menu-list" id="manageMenuList">
+                        <!-- Items listed here -->
+                    </div>
+                </div>
+
+                <div class="manage-menu-section">
+                    <h3>Add New Item</h3>
+                    <form id="addItemForm" class="add-item-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="newItemName">Item Name</label>
+                                <input type="text" id="newItemName" class="form-input" placeholder="e.g. Vada" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newItemPrice">Price (₹)</label>
+                                <input type="number" id="newItemPrice" class="form-input" placeholder="e.g. 15" min="1" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="newItemImageUrl">Image URL</label>
+                            <input type="url" id="newItemImageUrl" class="form-input" placeholder="https://example.com/food.jpg">
+                            <small class="form-help">Or upload an image below</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="newItemImageFile">Upload Image</label>
+                            <input type="file" id="newItemImageFile" class="form-input-file" accept="image/*">
+                            <div class="image-preview-wrap" id="imagePreviewWrap" style="display: none;">
+                                <img id="imagePreview" class="image-preview" alt="Preview">
+                                <button type="button" class="btn-text-danger" id="clearImagePreview">Remove image</button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary">Add Item to Menu</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="close-btn" id="closeSettingsBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-form">
+                    <h3>Restaurant Information</h3>
+                    <div class="form-group">
+                        <label for="restaurantName">Restaurant Name:</label>
+                        <input type="text" id="restaurantName" class="form-input" placeholder="Enter restaurant name">
+                    </div>
+                    <div class="form-group">
+                        <label for="restaurantAddress">Address:</label>
+                        <input type="text" id="restaurantAddress" class="form-input" placeholder="Enter address">
+                    </div>
+                    <div class="form-group">
+                        <label for="restaurantPhone">Phone:</label>
+                        <input type="text" id="restaurantPhone" class="form-input" placeholder="Enter phone number">
+                    </div>
+                    
+                    <h3 style="margin-top: 2rem;">Payment Settings</h3>
+                    <div class="form-group">
+                        <label for="upiId">UPI ID (for QR Code):</label>
+                        <input type="text" id="upiId" class="form-input" placeholder="your-upi@paytm" required>
+                        <small class="form-help">This UPI ID will be used to generate payment QR codes</small>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button class="btn-primary" id="saveSettingsBtn">Save Settings</button>
+                        <button class="btn-secondary" id="cancelSettingsBtn">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    <script src="invoice.js"></script>
+    <script src="revenue.js"></script>
+    <script src="qrcode.js"></script>
+</body>
+</html>
