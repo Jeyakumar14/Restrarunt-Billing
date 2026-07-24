@@ -1,6 +1,6 @@
 # 🍽️ Restaurant Billing System
 
-A lightweight, full-featured restaurant billing application built with vanilla JavaScript, HTML5, and CSS3.
+A lightweight, responsive Restaurant Billing System built with HTML5, CSS3, and Vanilla JavaScript. Features dynamic menu management, cart checkout, UPI QR code payments, PDF invoice generation, and a real-time revenue analytics dashboard—all running locally in the browser with no backend required.
 
 🔗 **Live Demo:** [Restaurant Billing Software](https://restraruntbillingsoftware.vercel.app/)
 
